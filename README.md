@@ -30,12 +30,27 @@ $ make install
 ```
 
 ## Docker
-Rather than installing all dependencies, you can run ChargeFW2 directly in a docker container:
+Rather than installing all dependencies, you can run ChargeFW2 directly in a Docker container:
+
 ```shell script
-$ cd docker  
 $ docker build -t chargefw2 .
-$ docker run -it chargefw2
+$ docker run -it --rm --entrypoint bash chargefw2
 ```
+
+A prebuild image is available on [Docker Hub](https://hub.docker.com/r/frimen/chargefw2) which can be used directly:
+
+```shell script
+$ docker run -it --rm --entrypoint bash docker.io/frimen/chargefw2
+```
+
+The Docker container is setup for use in CLI workflows. Example usage:
+
+```shell script
+$ docker build -t chargefw2 .
+$ docker run -it --rm -v $PWD:$PWD chargefw2 --mode charges --input-file $PWD/doc/molecules.sdf --chg-out-dir $PWD/<OUTPUT-DIR>
+```
+
+There is also a devcontainer available for this project. You can read more about it [here](.devcontainer/README.md).
 
 ## Usage
 
