@@ -1,21 +1,23 @@
 # Dev Container
 
-## Requirements
-https://code.visualstudio.com/docs/devcontainers/containers#_system-requirements
+## Requirements & Installation
+[See this guide](https://code.visualstudio.com/docs/devcontainers/containers#_system-requirements)
 
-## Installation
-https://code.visualstudio.com/docs/devcontainers/containers#_installation
-
-## How to use
+## How To Use
 
 VSCode should automatically prompt you to reopen the project in a container.
-If not, you can manually open the project in a container by running the command `>Dev Containers: Open Folder in Container...` from the command palette.
+If not, you can manually open the project in a container by running the command
+`>Dev Containers: Open Folder in Container...`
+from the Command Palette. VSCode might then further prompt you to rebuild the container.
 
-After the container is built and VSCode finishes loading the devcontainer environment, don't forget to run:
+After the container is done building, run the following commands to build the project:
 
 ```bash
+mkdir build
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=.
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=.
+make
+make install
 ```
 
-to update *CMakeCache.txt* (the default `CMAKE_INSTALL_PREFIX=/usr/lib` won't work because the devcontainer is running unpriviledged).
+> The default `CMAKE_INSTALL_PREFIX=/usr/lib` won't work because the devcontainer is running unprivileged and won't be able to install under that directory.
