@@ -14,4 +14,5 @@
 class PQR : public Writer {
 public:
     void save_charges(const MoleculeSet &ms, const Charges &charges, const std::string &filename) override;
+    void append_charges_to_file(const MoleculeSet &ms, const Charges &charges, const std::string &filename);
 };

@@ -137,13 +137,24 @@ int main(int argc, char **argv) {
 
             if (ext == ".cif"){
                 CIF().save_charges(m, charges, config::input_file);
-                if (config::mmcif_charges) {
-                    CIF().append_charges_to_file(m, charges, config::input_file);
-                }
             }
         } else {
             auto mol2_str = file.filename().string() + ".mol2";
             Mol2().save_charges(m, charges, dir / std::filesystem::path(mol2_str));
+        }
+
+        // create a mmcif file with charges
+        if (config::mmcif_charges) {
+            if (ext == ".cif") {
+                CIF().append_charges_to_file(m, charges, config::input_file);
+            } else if (ext == ".mol2" or ext == ".sdf") {
+                fmt::print(stderr, "Not implemented yet.\n");
+            } else if (ext == ".pdb" or ext == ".ent") {
+                PQR().append_charges_to_file(m, charges, config::input_file);
+            }
+            else {
+                throw std::runtime_error("Cannot append charges to file with extension " + ext);
+            }
         }
 
         if (not config::log_file.empty()) {
