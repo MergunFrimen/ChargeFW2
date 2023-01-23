@@ -15,14 +15,13 @@ ARG DEPS="\
         libfmt-dev \
         libnanoflann-dev \
         libomp-dev \
-        make \
         nlohmann-json3-dev \
         python3-dev \
         python3-pybind11 \
         tao-pegtl-dev"
 
 RUN apt-get update && \
-        apt-get install -y --no-install-recommends ${DEPS} && \
+        apt-get install -y ${DEPS} && \
         rm -rf /var/lib/apt/lists/* && \
         apt-get clean && \
         apt-get autoremove
