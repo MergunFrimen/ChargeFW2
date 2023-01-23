@@ -21,7 +21,7 @@
 #include "../structures/molecule_set.h"
 #include "../charges.h"
 #include "../config.h"
-
+#include "../utility/strings.h"
 
 namespace fs = std::filesystem;
 
@@ -226,6 +226,10 @@ void CIF::save_charges(const MoleculeSet &ms, const Charges &charges, const std:
     int row_num = 0;
 
     try {
+        if (config::mmcif_charges) {
+            CIF().append_charges_to_file(molecule, charges);
+        }
+
         auto chg = charges[molecule.name()];
         for (size_t i = 0; i < molecule.atoms().size(); i++) {
             const auto &atom = molecule.atoms()[i];
@@ -253,4 +257,105 @@ void CIF::save_charges(const MoleculeSet &ms, const Charges &charges, const std:
     catch (std::out_of_range &) {
         /* Do nothing */
     }
+}
+
+void CIF::append_charges_to_file(const Molecule &molecule, const Charges &charges)
+{
+    // output file
+    fs::path dir(config::chg_out_dir);
+    std::string filename = fmt::format("{}.cif", to_lowercase(molecule.name()));
+    auto file = std::fopen((dir / filename).c_str(), "w");
+    if (!file) {
+        fmt::print(stderr, "Cannot open file: {}\n", filename);
+        exit(EXIT_FILE_ERROR);
+    }
+
+    // * This print out could be useful for SDF otherwise useless
+    // static const std::vector<std::string> atom_site_attributes = {
+    //     "group_PDB",
+    //     "id",
+    //     "type_symbol",
+    //     "label_atom_id",
+    //     "label_comp_id",
+    //     "label_seq_id",
+    //     "label_alt_id",
+    //     "label_asym_id",
+    //     "label_entity_id",
+    //     "Cartn_x",
+    //     "Cartn_y",
+    //     "Cartn_z",
+    //     "auth_asym_id"};
+    
+    // // data
+    // fmt::print(file, "data_{}\n", molecule.name());
+    // fmt::print(file, "#\n");
+
+    // // atom_site data
+    // fmt::print(file, "loop_\n");
+    // for (const auto &attribute : atom_site_attributes)
+    //     fmt::print(file, "_atom_site.{}\n", attribute);
+    // for (size_t i = 0; i < molecule.atoms().size(); i++)
+    // {
+    //     const auto &atom = molecule.atoms()[i];
+    //     const auto chain_id = atom.chain_id() == "" ? "." : atom.chain_id();
+    //     fmt::print(file, "{:<6s} {:>5d} {:<2s} {:<4s} {:<4s} {:>4d} {} {:<1s} {} {:>8.3f}{:>8.3f}{:>8.3f} {}\n",
+    //                 atom.hetatm() ? "HETATM" : "ATOM", // group_PDB
+    //                 atom.index() + 1,                  // id
+    //                 atom.element().symbol(),           // type_symbol
+    //                 atom.name(),                       // label_atom_id
+    //                 atom.residue(),                    // label_comp_id
+    //                 atom.residue_id(),                 // label_seq_id
+    //                 ".",                               // label_alt_id
+    //                 chain_id,                          // label_asym_id
+    //                 "1",                               // label_entity_id
+    //                 atom.pos()[0],                     // Cartn_x
+    //                 atom.pos()[1],                     // Cartn_y
+    //                 atom.pos()[2],                     // Cartn_z
+    //                 "."                                // auth_asym_id
+    //     );
+    // }
+    // fmt::print(file, "#\n");
+
+    static const std::vector<std::string> partial_atomic_charges_meta_attributes = {
+        "id",
+        "type",
+        "method",
+    };
+
+    static const std::vector<std::string> partial_atomic_charges_attributes = {
+        "type_id",
+        "atom_id",
+        "charge",
+    };
+
+    // charges metadata
+    const std::string method = charges.method_name() + "/" + charges.parameters_name();
+    auto charge = charges[molecule.name()];
+    
+    fmt::print(file, "loop_\n");
+    for (const auto &attribute : partial_atomic_charges_meta_attributes) {
+        fmt::print(file, "_partial_atomic_charges_meta.{}\n", attribute);
+    }
+    fmt::print(file, "{:>2d} {} \"{}\"\n",
+               1,           // id
+               "empirical", // type
+               method       // method
+    );
+
+    fmt::print(file, "#\n");
+
+    // charges data
+    fmt::print(file, "loop_\n");
+    for (const auto &attribute : partial_atomic_charges_attributes) {
+        fmt::print(file, "_partial_atomic_charges.{}\n", attribute);
+    }
+    for (size_t i = 0; i < molecule.atoms().size(); ++i) {
+        const auto &atom = molecule.atoms()[i];
+        fmt::print(file, "{:>2d} {:>5d} {:>8.3f}\n",
+                   1,                // type_id
+                   atom.index() + 1, // atom_id
+                   charge[i]);          // charge
+    }
+
+    fclose(file);
 }

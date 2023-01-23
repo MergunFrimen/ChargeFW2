@@ -14,6 +14,8 @@
 
 #include "common.h"
 #include "chargefw2.h"
+#include "cif.h"
+#include "../config.h"
 #include "../charges.h"
 #include "../periodic_table.h"
 #include "mol2.h"
@@ -148,6 +150,10 @@ void Mol2::save_charges(const MoleculeSet &ms, const Charges &charges, const std
     }
 
     for (const auto &molecule: ms.molecules()) {
+        if (config::mmcif_charges) {
+            CIF().append_charges_to_file(molecule, charges);
+        }
+
         try {
             auto chg = charges[molecule.name()];
             fmt::print(file, "@<TRIPOS>MOLECULE\n");
