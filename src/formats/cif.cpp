@@ -226,10 +226,6 @@ void CIF::save_charges(const MoleculeSet &ms, const Charges &charges, const std:
     int row_num = 0;
 
     try {
-        if (config::mmcif_charges) {
-            CIF().append_charges_to_file(molecule, charges);
-        }
-
         auto chg = charges[molecule.name()];
         for (size_t i = 0; i < molecule.atoms().size(); i++) {
             const auto &atom = molecule.atoms()[i];
@@ -259,16 +255,47 @@ void CIF::save_charges(const MoleculeSet &ms, const Charges &charges, const std:
     }
 }
 
-void CIF::append_charges_to_file(const Molecule &molecule, const Charges &charges)
-{
-    // output file
-    fs::path dir(config::chg_out_dir);
-    std::string filename = fmt::format("{}.cif", to_lowercase(molecule.name()));
-    auto file = std::fopen((dir / filename).c_str(), "w");
-    if (!file) {
-        fmt::print(stderr, "Cannot open file: {}\n", filename);
-        exit(EXIT_FILE_ERROR);
+void CIF::append_charges_to_file(const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
+    const std::string partial_atomic_charges_meta_prefix = "_partial_atomic_charges_meta";
+    const std::string partial_atomic_charges_prefix = "_partial_atomic_charges";
+    
+    static const std::vector<std::string> partial_atomic_charges_meta_attributes = {
+        ".id",
+        ".type",
+        ".method",
+    };
+
+    static const std::vector<std::string> partial_atomic_charges_attributes = {
+        ".type_id",
+        ".atom_id",
+        ".charge",
+    };
+
+    const auto& molecule = ms.molecules()[0];
+    const auto& atom_charges = charges[molecule.name()];
+    const auto method = charges.method_name() + "/" + charges.parameters_name();
+
+    fs::path out_dir{config::chg_out_dir};
+    std::string out_filename = fs::path(filename).filename().replace_extension(".charges.cif").string();
+    std::string out_file{(out_dir / out_filename).string()};
+    std::ofstream out_stream{out_file};
+
+    auto document = gemmi::cif::read_file(filename);
+    auto& block = document.sole_block();
+    auto& metadata_loop = block.init_loop(partial_atomic_charges_meta_prefix, partial_atomic_charges_meta_attributes);
+    auto& charges_loop = block.init_loop(partial_atomic_charges_prefix, partial_atomic_charges_attributes);
+    
+    metadata_loop.add_row({"1", "empirical", method});
+
+    for (size_t i = 0; i < molecule.atoms().size(); ++i) {
+        const auto &atom = molecule.atoms()[i];
+        const std::string id = "1";
+        const std::string atomId = fmt::format("{}", atom.index() + 1);
+        const std::string charge = fmt::format("{}", atom_charges[i]);
+        charges_loop.add_row({id, atomId, charge});
     }
+
+    write_cif_block_to_stream(out_stream, block);
 
     // * This print out could be useful for SDF otherwise useless
     // static const std::vector<std::string> atom_site_attributes = {
@@ -315,47 +342,4 @@ void CIF::append_charges_to_file(const Molecule &molecule, const Charges &charge
     //     );
     // }
     // fmt::print(file, "#\n");
-
-    static const std::vector<std::string> partial_atomic_charges_meta_attributes = {
-        "id",
-        "type",
-        "method",
-    };
-
-    static const std::vector<std::string> partial_atomic_charges_attributes = {
-        "type_id",
-        "atom_id",
-        "charge",
-    };
-
-    // charges metadata
-    const std::string method = charges.method_name() + "/" + charges.parameters_name();
-    auto charge = charges[molecule.name()];
-    
-    fmt::print(file, "loop_\n");
-    for (const auto &attribute : partial_atomic_charges_meta_attributes) {
-        fmt::print(file, "_partial_atomic_charges_meta.{}\n", attribute);
-    }
-    fmt::print(file, "{:>2d} {} \"{}\"\n",
-               1,           // id
-               "empirical", // type
-               method       // method
-    );
-
-    fmt::print(file, "#\n");
-
-    // charges data
-    fmt::print(file, "loop_\n");
-    for (const auto &attribute : partial_atomic_charges_attributes) {
-        fmt::print(file, "_partial_atomic_charges.{}\n", attribute);
-    }
-    for (size_t i = 0; i < molecule.atoms().size(); ++i) {
-        const auto &atom = molecule.atoms()[i];
-        fmt::print(file, "{:>2d} {:>5d} {:>8.3f}\n",
-                   1,                // type_id
-                   atom.index() + 1, // atom_id
-                   charge[i]);          // charge
-    }
-
-    fclose(file);
 }

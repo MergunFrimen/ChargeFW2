@@ -137,6 +137,9 @@ int main(int argc, char **argv) {
 
             if (ext == ".cif"){
                 CIF().save_charges(m, charges, config::input_file);
+                if (config::mmcif_charges) {
+                    CIF().append_charges_to_file(m, charges, config::input_file);
+                }
             }
         } else {
             auto mol2_str = file.filename().string() + ".mol2";

@@ -23,10 +23,6 @@ void PQR::save_charges(const MoleculeSet &ms, const Charges &charges, const std:
 
     try
     {
-        if (config::mmcif_charges) {
-        CIF().append_charges_to_file(molecule, charges);
-        }
-
         auto chg = charges[molecule.name()];
         for (size_t i = 0; i < molecule.atoms().size(); i++) {
             const auto &atom = molecule.atoms()[i];
