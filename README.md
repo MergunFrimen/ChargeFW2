@@ -60,7 +60,8 @@ The Docker container is setup for use in CLI workflows. Example using relative p
 
 ```shell script
 $ docker build -t chargefw2 .
-$ docker run -it --rm -v $PWD:$PWD chargefw2 --mode charges --input-file $PWD/doc/molecules.sdf --chg-out-dir $PWD/
+$ docker run -it --rm -v $PWD:$PWD chargefw2 --mode charges \
+    --input-file $PWD/doc/molecules.sdf --chg-out-dir $PWD/
 ```
 
 There is also a devcontainer available for this project. You can read more about it [here](.devcontainer/README.md).
