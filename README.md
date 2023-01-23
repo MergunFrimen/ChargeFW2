@@ -1,7 +1,7 @@
 <h1 align="center">
-  <!-- <a href=""> -->
-  <img src="./doc/logo.png" alt="ChargeFW2" width="500">
-  <!-- </a> -->
+  <a href="https://github.com/MergunFrimen/chargefw2">
+  <img src="https://raw.githubusercontent.com/MergunFrimen/chargefw2/feature-readme/doc/logo.png" alt="ChargeFW2" width="500">
+  </a>
 </h1>
 
 
