@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
             if (ext == ".cif") {
                 CIF().append_charges_to_file(m, charges, config::input_file);
             } else if (ext == ".mol2" or ext == ".sdf") {
-                fmt::print(stderr, "Not implemented yet.\n");
+                Mol2().append_charges_to_file(m, charges, config::input_file);
             } else if (ext == ".pdb" or ext == ".ent") {
                 PQR().append_charges_to_file(m, charges, config::input_file);
             }

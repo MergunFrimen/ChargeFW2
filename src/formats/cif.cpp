@@ -259,13 +259,13 @@ void CIF::append_charges_to_file(const MoleculeSet &ms, const Charges &charges, 
     const std::string partial_atomic_charges_meta_prefix = "_partial_atomic_charges_meta";
     const std::string partial_atomic_charges_prefix = "_partial_atomic_charges";
     
-    static const std::vector<std::string> partial_atomic_charges_meta_attributes = {
+    const std::vector<std::string> partial_atomic_charges_meta_attributes = {
         ".id",
         ".type",
         ".method",
     };
 
-    static const std::vector<std::string> partial_atomic_charges_attributes = {
+    const std::vector<std::string> partial_atomic_charges_attributes = {
         ".type_id",
         ".atom_id",
         ".charge",
@@ -273,7 +273,6 @@ void CIF::append_charges_to_file(const MoleculeSet &ms, const Charges &charges, 
 
     const auto& molecule = ms.molecules()[0];
     const auto& atom_charges = charges[molecule.name()];
-    const auto method = charges.method_name() + "/" + charges.parameters_name();
 
     fs::path out_dir{config::chg_out_dir};
     std::string out_filename = fs::path(filename).filename().replace_extension(".charges.cif").string();
@@ -282,64 +281,31 @@ void CIF::append_charges_to_file(const MoleculeSet &ms, const Charges &charges, 
 
     auto document = gemmi::cif::read_file(filename);
     auto& block = document.sole_block();
+
+    // _partial_atomic_charges_meta
     auto& metadata_loop = block.init_loop(partial_atomic_charges_meta_prefix, partial_atomic_charges_meta_attributes);
+    const auto id = "1";
+    const auto type = "empirical";
+    const auto method = fmt::format("'{}/{}'", charges.method_name(), charges.parameters_name());
+    metadata_loop.add_row({
+        id,
+        type,
+        method,
+    });
+
+    // _partial_atomic_charges  
     auto& charges_loop = block.init_loop(partial_atomic_charges_prefix, partial_atomic_charges_attributes);
-
-    metadata_loop.add_row({"1", "empirical", fmt::format("'{}'", method)});
-
     for (size_t i = 0; i < molecule.atoms().size(); ++i) {
         const auto &atom = molecule.atoms()[i];
-        const std::string id = "1";
-        const std::string atomId = fmt::format("{}", atom.index() + 1);
-        const std::string charge = fmt::format("{}", atom_charges[i]);
-        charges_loop.add_row({id, atomId, charge});
+        const auto id = "1";
+        const auto atomId = fmt::format("{}", atom.index() + 1);
+        const auto charge = fmt::format("{}", atom_charges[i]);
+        charges_loop.add_row({
+            id,
+            atomId,
+            charge,
+        });
     }
 
-    write_cif_block_to_stream(out_stream, block);
-
-    // * This print out could be useful for SDF otherwise useless
-    // static const std::vector<std::string> atom_site_attributes = {
-    //     "group_PDB",
-    //     "id",
-    //     "type_symbol",
-    //     "label_atom_id",
-    //     "label_comp_id",
-    //     "label_seq_id",
-    //     "label_alt_id",
-    //     "label_asym_id",
-    //     "label_entity_id",
-    //     "Cartn_x",
-    //     "Cartn_y",
-    //     "Cartn_z",
-    //     "auth_asym_id"};
-    
-    // // data
-    // fmt::print(file, "data_{}\n", molecule.name());
-    // fmt::print(file, "#\n");
-
-    // // atom_site data
-    // fmt::print(file, "loop_\n");
-    // for (const auto &attribute : atom_site_attributes)
-    //     fmt::print(file, "_atom_site.{}\n", attribute);
-    // for (size_t i = 0; i < molecule.atoms().size(); i++)
-    // {
-    //     const auto &atom = molecule.atoms()[i];
-    //     const auto chain_id = atom.chain_id() == "" ? "." : atom.chain_id();
-    //     fmt::print(file, "{:<6s} {:>5d} {:<2s} {:<4s} {:<4s} {:>4d} {} {:<1s} {} {:>8.3f}{:>8.3f}{:>8.3f} {}\n",
-    //                 atom.hetatm() ? "HETATM" : "ATOM", // group_PDB
-    //                 atom.index() + 1,                  // id
-    //                 atom.element().symbol(),           // type_symbol
-    //                 atom.name(),                       // label_atom_id
-    //                 atom.residue(),                    // label_comp_id
-    //                 atom.residue_id(),                 // label_seq_id
-    //                 ".",                               // label_alt_id
-    //                 chain_id,                          // label_asym_id
-    //                 "1",                               // label_entity_id
-    //                 atom.pos()[0],                     // Cartn_x
-    //                 atom.pos()[1],                     // Cartn_y
-    //                 atom.pos()[2],                     // Cartn_z
-    //                 "."                                // auth_asym_id
-    //     );
-    // }
-    // fmt::print(file, "#\n");
+    gemmi::cif::write_cif_block_to_stream(out_stream, block);
 }
