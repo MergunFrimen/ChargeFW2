@@ -143,6 +143,7 @@ int main(int argc, char **argv) {
             Mol2().save_charges(m, charges, dir / std::filesystem::path(mol2_str));
         }
 
+        // TODO: branch based on is_protein_structure?
         // create a mmcif file with charges
         if (config::mmcif_charges) {
             if (ext == ".cif") {
@@ -153,7 +154,8 @@ int main(int argc, char **argv) {
                 PQR().append_charges_to_file(m, charges, config::input_file);
             }
             else {
-                throw std::runtime_error("Cannot append charges to file with extension " + ext);
+                fmt::print(stderr, "Cannot append charges to file with extension " + ext);
+                exit(EXIT_FILE_ERROR);
             }
         }
 

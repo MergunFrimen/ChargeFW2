@@ -284,8 +284,8 @@ void CIF::append_charges_to_file(const MoleculeSet &ms, const Charges &charges, 
     auto& block = document.sole_block();
     auto& metadata_loop = block.init_loop(partial_atomic_charges_meta_prefix, partial_atomic_charges_meta_attributes);
     auto& charges_loop = block.init_loop(partial_atomic_charges_prefix, partial_atomic_charges_attributes);
-    
-    metadata_loop.add_row({"1", "empirical", method});
+
+    metadata_loop.add_row({"1", "empirical", fmt::format("'{}'", method)});
 
     for (size_t i = 0; i < molecule.atoms().size(); ++i) {
         const auto &atom = molecule.atoms()[i];
