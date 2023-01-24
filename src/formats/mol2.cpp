@@ -244,7 +244,7 @@ void Mol2::append_charges_to_file(const MoleculeSet &ms, const Charges &charges,
     const auto& molecule = ms.molecules()[0];
 
     std::filesystem::path out_dir{config::chg_out_dir};
-    std::string out_filename = std::filesystem::path(filename).filename().replace_extension(".charges.cif").string();
+    std::string out_filename = std::filesystem::path(filename).filename().string() + ".charges.cif";
     std::string out_file{(out_dir / out_filename).string()};
     std::ofstream out_stream{out_file};
 
@@ -306,6 +306,8 @@ void Mol2::append_charges_to_file(const MoleculeSet &ms, const Charges &charges,
             value_order,
         });
     }
+
+    CIF().append_charges_to_block(ms, charges, block);
 
     gemmi::cif::write_cif_block_to_stream(out_stream, block);
 }

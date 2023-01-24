@@ -55,8 +55,6 @@ void PQR::save_charges(const MoleculeSet &ms, const Charges &charges, const std:
     fclose(file);
 }
 
-// converts PDB file to CIF file
-// TODO: append charges to converted CIF file
 void PQR::append_charges_to_file(const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
     auto structure = gemmi::read_pdb_file(filename);
 
@@ -68,12 +66,14 @@ void PQR::append_charges_to_file(const MoleculeSet &ms, const Charges &charges, 
     gemmi::setup_entities(structure);
     gemmi::assign_label_seq_id(structure, false);
 
-    const auto& document = gemmi::make_mmcif_document(structure);
+    auto block = gemmi::make_mmcif_block(structure);
     
     std::filesystem::path out_dir{config::chg_out_dir};
-    std::string out_filename = std::filesystem::path(filename).filename().replace_extension(".charges.cif").string();
+    std::string out_filename = std::filesystem::path(filename).filename().string() + ".charges.cif";
     std::string out_file{(out_dir / out_filename).string()};
     std::ofstream out_stream{out_file};
+
+    CIF().append_charges_to_block(ms, charges, block);
     
-    write_cif_to_stream(out_stream, document);
+    gemmi::cif::write_cif_block_to_stream(out_stream, block);
 }

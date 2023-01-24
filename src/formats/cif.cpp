@@ -256,6 +256,20 @@ void CIF::save_charges(const MoleculeSet &ms, const Charges &charges, const std:
 }
 
 void CIF::append_charges_to_file(const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
+    std::filesystem::path out_dir{config::chg_out_dir};
+    std::string out_filename = std::filesystem::path(filename).filename().string() + ".charges.cif";
+    std::string out_file{(out_dir / out_filename).string()};
+    std::ofstream out_stream{out_file};
+
+    auto document = gemmi::cif::read_file(filename);
+    auto& block = document.sole_block();
+
+    CIF().append_charges_to_block(ms, charges, block);
+
+    gemmi::cif::write_cif_block_to_stream(out_stream, block);
+}
+
+void CIF::append_charges_to_block(const MoleculeSet &ms, const Charges &charges, gemmi::cif::Block &block) {
     const std::string partial_atomic_charges_meta_prefix = "_partial_atomic_charges_meta";
     const std::string partial_atomic_charges_prefix = "_partial_atomic_charges";
     
@@ -273,14 +287,6 @@ void CIF::append_charges_to_file(const MoleculeSet &ms, const Charges &charges, 
 
     const auto& molecule = ms.molecules()[0];
     const auto& atom_charges = charges[molecule.name()];
-
-    fs::path out_dir{config::chg_out_dir};
-    std::string out_filename = fs::path(filename).filename().replace_extension(".charges.cif").string();
-    std::string out_file{(out_dir / out_filename).string()};
-    std::ofstream out_stream{out_file};
-
-    auto document = gemmi::cif::read_file(filename);
-    auto& block = document.sole_block();
 
     // _partial_atomic_charges_meta
     auto& metadata_loop = block.init_loop(partial_atomic_charges_meta_prefix, partial_atomic_charges_meta_attributes);
@@ -306,6 +312,4 @@ void CIF::append_charges_to_file(const MoleculeSet &ms, const Charges &charges, 
             charge,
         });
     }
-
-    gemmi::cif::write_cif_block_to_stream(out_stream, block);
 }
