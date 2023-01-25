@@ -22,7 +22,6 @@ namespace config {
     bool read_hetatm;
     bool ignore_water;
     bool permissive_types;
-    bool mmcif_charges;
 }
 
 
@@ -41,8 +40,7 @@ boost::program_options::parsed_options parse_args(int argc, char **argv) {
             ("read-hetatm", po::bool_switch()->default_value(false), "Read HETATM records from PDB/mmCIF files")
             ("ignore-water", po::bool_switch()->default_value(false), "Discard water molecules from PDB/mmCIF files")
             ("permissive-types", po::bool_switch()->default_value(false), "Use similar parameters for similar atom/bond types if no exact match is found")
-            ("method", po::value<std::string>()->default_value(""), "Method")
-            ("mmcif-charges", po::bool_switch()->default_value(false), "Generate a mmCIF file with structure data and charges.");
+            ("method", po::value<std::string>()->default_value(""), "Method");
 
     try {
         po::variables_map vm;
@@ -71,7 +69,6 @@ boost::program_options::parsed_options parse_args(int argc, char **argv) {
         config::read_hetatm = vm["read-hetatm"].as<bool>();
         config::ignore_water = vm["ignore-water"].as<bool>();
         config::permissive_types = vm["permissive-types"].as<bool>();
-        config::mmcif_charges = vm["mmcif-charges"].as<bool>();
 
         return parsed;
     } catch (const std::exception &e) {
