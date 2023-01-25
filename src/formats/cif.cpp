@@ -18,10 +18,10 @@
 // suppresses warnings from gemmi/to_mmcif.hpp
 // unfortunately only works with clang
 #define GEMMI_WRITE_IMPLEMENTATION
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wcpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcpp"
 #include <gemmi/to_mmcif.hpp>  // make_mmcif_block
-#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 #undef GEMMI_WRITE_IMPLEMENTATION
 
 #include "chargefw2.h"
