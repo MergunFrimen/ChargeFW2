@@ -13,9 +13,9 @@ ARG DEPS="\
         libboost-system-dev \
         libeigen3-dev \
         libfmt-dev \
-        libfmt-dev \
         libnanoflann-dev \
         libomp-dev \
+        libstb-dev \
         nlohmann-json3-dev \
         python3-dev \
         python3-pybind11 \
@@ -23,18 +23,12 @@ ARG DEPS="\
         tao-pegtl-dev"
 
 RUN apt-get update && \
-        apt-get install -y ${DEPS} && \
-        rm -rf /var/lib/apt/lists/* && \
-        apt-get clean && \
-        apt-get autoremove
-RUN apt-get update && \
-        apt-get install -y ${DEPS} && \
-        rm -rf /var/lib/apt/lists/* && \
-        apt-get clean && \
-        apt-get autoremove
+        apt-get install -y ${DEPS}
+
+RUN git clone https://github.com/project-gemmi/gemmi.git && \
+    cp -r gemmi/include/gemmi /usr/include
 
 # non-root user
-ARG UNAME=nonroot
 ARG UNAME=nonroot
 ARG UID=1000
 ARG GID=1000

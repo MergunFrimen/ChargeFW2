@@ -14,16 +14,14 @@ ARG DEPS="\
         libfmt-dev \
         libnanoflann-dev \
         libomp-dev \
+        libstb-dev \
         nlohmann-json3-dev \
         python3-dev \
         python3-pybind11 \
         tao-pegtl-dev"
 
 RUN apt-get update && \
-        apt-get install -y ${DEPS} && \
-        rm -rf /var/lib/apt/lists/* && \
-        apt-get clean && \
-        apt-get autoremove
+        apt-get install -y ${DEPS}
 
 RUN git clone --depth 1 https://github.com/krab1k/ChargeFW2.git && \
         cd ChargeFW2 && \
