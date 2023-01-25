@@ -12,7 +12,6 @@ ARG DEPS="\
         libboost-system-dev \
         libeigen3-dev \
         libfmt-dev \
-        libfmt-dev \
         libnanoflann-dev \
         libomp-dev \
         nlohmann-json3-dev \
@@ -54,7 +53,6 @@ ENV PATH=/ChargeFW2/build/bin:${PATH}
 # copy over the build artifacts
 COPY --from=build /build/ /ChargeFW2/build
 COPY --from=build /dependencies/* /usr/lib/x86_64-linux-gnu/
-COPY  test/examples/3bj1.cif .
 
 # non-root user
 ARG UNAME=nonroot
