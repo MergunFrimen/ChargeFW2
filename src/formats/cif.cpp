@@ -9,11 +9,19 @@
 #include <fstream>
 #include <filesystem>
 
+#include <gemmi/align.hpp>  // assign_label_seq_id
 #include <gemmi/cif.hpp>
 #include <gemmi/mmcif.hpp>
-
-#define GEMMI_WRITE_IMPLEMENTATION
+#include <gemmi/pdb.hpp>
 #include <gemmi/to_cif.hpp>
+
+// suppresses warnings from gemmi/to_mmcif.hpp
+// unfortunately only works with clang
+#define GEMMI_WRITE_IMPLEMENTATION
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcpp"
+#include <gemmi/to_mmcif.hpp>  // make_mmcif_block
+#pragma clang diagnostic pop
 #undef GEMMI_WRITE_IMPLEMENTATION
 
 #include "chargefw2.h"
@@ -21,7 +29,7 @@
 #include "../structures/molecule_set.h"
 #include "../charges.h"
 #include "../config.h"
-
+#include "../utility/strings.h"
 
 namespace fs = std::filesystem;
 
@@ -252,5 +260,219 @@ void CIF::save_charges(const MoleculeSet &ms, const Charges &charges, const std:
     }
     catch (std::out_of_range &) {
         /* Do nothing */
+    }
+}
+
+static std::string convert_bond_order_to_mmcif_value_order_string(int order) {
+    // See link for bond order values for PDBx/mmCIF category _chem_comp_bond.value_order
+    // https://mmcif.wwpdb.org/dictionaries/mmcif_pdbx_v50.dic/Items/_chem_comp_bond.value_order.html#papwtenum
+    switch (order) {
+        case 1:
+            return "SING";
+        case 2:
+            return "DOUB";
+        case 3:
+            return "TRIP";
+        case 4:
+            return "AROM";
+        default:
+            return ".";  // unknown
+    }
+}
+
+static void append_charges_to_block(const MoleculeSet &ms, const Charges &charges, gemmi::cif::Block &block) {
+    const std::string partial_atomic_charges_meta_prefix = "_partial_atomic_charges_meta";
+    const std::string partial_atomic_charges_prefix = "_partial_atomic_charges";
+    
+    const std::vector<std::string> partial_atomic_charges_meta_attributes = {
+        ".id",
+        ".type",
+        ".method",
+    };
+
+    const std::vector<std::string> partial_atomic_charges_attributes = {
+        ".type_id",
+        ".atom_id",
+        ".charge",
+    };
+
+    const auto& molecule = ms.molecules()[0];
+    const auto& atom_charges = charges[molecule.name()];
+
+    // _partial_atomic_charges_meta
+    auto& metadata_loop = block.init_loop(partial_atomic_charges_meta_prefix, partial_atomic_charges_meta_attributes);
+    const auto id = "1";
+    const auto type = "empirical";
+    const auto method = fmt::format("'{}/{}'", charges.method_name(), charges.parameters_name());
+    metadata_loop.add_row({
+        id,
+        type,
+        method,
+    });
+
+    // _partial_atomic_charges  
+    auto& charges_loop = block.init_loop(partial_atomic_charges_prefix, partial_atomic_charges_attributes);
+    for (size_t i = 0; i < molecule.atoms().size(); ++i) {
+        const auto &atom = molecule.atoms()[i];
+        const auto id = "1";
+        const auto atomId = fmt::format("{}", atom.index() + 1);
+        const auto charge = fmt::format("{}", atom_charges[i]);
+        charges_loop.add_row({
+            id,
+            atomId,
+            charge,
+        });
+    }
+}
+
+static void generate_from_cif_file(const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
+    std::filesystem::path out_dir{config::chg_out_dir};
+    std::string out_filename = std::filesystem::path(filename).filename().string() + ".charges.cif";
+    std::string out_file{(out_dir / out_filename).string()};
+    std::ofstream out_stream{out_file};
+
+    auto document = gemmi::cif::read_file(filename);
+    auto& block = document.sole_block();
+
+    append_charges_to_block(ms, charges, block);
+
+    gemmi::cif::write_cif_block_to_stream(out_stream, block);
+}
+
+static void generate_from_pdb_file(const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
+    auto structure = gemmi::read_pdb_file(filename);
+
+    if (structure.models.empty() || structure.models[0].chains.empty()) {
+        fmt::print(stderr, "ERROR: No models or no chains in PDB file.\n");
+        exit(EXIT_FILE_ERROR);
+    }
+
+    gemmi::setup_entities(structure);
+    gemmi::assign_label_seq_id(structure, false);
+
+    auto block = gemmi::make_mmcif_block(structure);
+    
+    std::filesystem::path out_dir{config::chg_out_dir};
+    std::string out_filename = std::filesystem::path(filename).filename().string() + ".charges.cif";
+    std::string out_file{(out_dir / out_filename).string()};
+    std::ofstream out_stream{out_file};
+
+    append_charges_to_block(ms, charges, block);
+    
+    gemmi::cif::write_cif_block_to_stream(out_stream, block);
+}
+
+static void generate_from_atom_and_bond_data(const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
+    const std::string atom_site_prefix = "_atom_site";
+    const std::string chem_comp_prefix = "_chem_comp";    
+    const std::string chem_comp_bond_prefix = "_chem_comp_bond";
+
+    const std::vector<std::string> atom_site_attributes = {
+        ".group_PDB",
+        ".id",
+        ".type_symbol",
+        ".label_atom_id",
+        ".label_comp_id",
+        ".label_seq_id",
+        ".label_alt_id",
+        ".label_asym_id",
+        ".label_entity_id",
+        ".Cartn_x",
+        ".Cartn_y",
+        ".Cartn_z",
+        ".auth_asym_id",
+    };
+
+    const std::vector<std::string> chem_comp_attributes = {
+        ".id",
+    };
+
+    const std::vector<std::string> chem_comp_bond_attributes = {
+        ".comp_id",
+        ".atom_id_1",
+        ".atom_id_2",
+        ".value_order",
+    };
+
+    const auto& molecule = ms.molecules()[0];
+
+    std::filesystem::path out_dir{config::chg_out_dir};
+    std::string out_filename = std::filesystem::path(filename).filename().string() + ".charges.cif";
+    std::string out_file{(out_dir / out_filename).string()};
+    std::ofstream out_stream{out_file};
+
+    auto document = gemmi::cif::Document{};
+    auto& block = document.add_new_block(to_lowercase(molecule.name()));
+
+    // _atom_site
+    auto& atom_site_loop = block.init_loop(atom_site_prefix, atom_site_attributes);
+    for (size_t i = 0; i < molecule.atoms().size(); i++) {
+        const auto &atom = molecule.atoms()[i];
+        const std::string group_PDB = atom.hetatm() ? "HETATM" : "ATOM";
+        const std::string id = fmt::format("{}", atom.index() + 1);
+        const std::string type_symbol = atom.element().symbol();
+        const std::string label_atom_id = id;
+        const std::string label_comp_id = atom.residue();
+        const std::string label_seq_id = fmt::format("{}", atom.residue_id());
+        const std::string label_alt_id = ".";
+        const std::string label_asym_id = atom.chain_id() == "" ? "." : atom.chain_id();
+        const std::string label_entity_id = "1";
+        const std::string cartn_x = fmt::format("{:.3f}", atom.pos()[0]);
+        const std::string cartn_y = fmt::format("{:.3f}", atom.pos()[1]);
+        const std::string cartn_z = fmt::format("{:.3f}", atom.pos()[2]);
+        const std::string auth_asym_id = ".";
+        atom_site_loop.add_row({
+            group_PDB,
+            id,
+            type_symbol,
+            label_atom_id,
+            label_comp_id,
+            label_seq_id,
+            label_alt_id,
+            label_asym_id,
+            label_entity_id,
+            cartn_x,
+            cartn_y,
+            cartn_z,
+            auth_asym_id,
+        });
+    }
+
+    // _chem_comp
+    auto& chem_comp_loop = block.init_loop(chem_comp_prefix, chem_comp_attributes);
+    const std::string comp_id = "UNL";
+    chem_comp_loop.add_row({
+        comp_id,
+    });
+
+    // _chem_comp_bond
+    auto& chem_comp_bond_loop = block.init_loop(chem_comp_bond_prefix, chem_comp_bond_attributes);
+    for (const auto& bond: molecule.bonds()) {
+        const std::string comp_id = "UNL";
+        const std::string atom_id_1 = fmt::format("{}", bond.first().index() + 1);
+        const std::string atom_id_2 = fmt::format("{}", bond.second().index() + 1);
+        const std::string value_order = convert_bond_order_to_mmcif_value_order_string(bond.order());
+        chem_comp_bond_loop.add_row({
+            comp_id,
+            atom_id_1,
+            atom_id_2,
+            value_order,
+        });
+    }
+
+    append_charges_to_block(ms, charges, block);
+
+    gemmi::cif::write_cif_block_to_stream(out_stream, block);
+}
+
+void CIF::generate_mmcif_file_with_charges(const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
+    auto ext = std::filesystem::path(filename).extension().string();
+    
+    if (ext == ".cif") {
+        generate_from_cif_file(ms, charges, config::input_file);
+    } else if (ext == ".pdb" or ext == ".ent") {
+        generate_from_pdb_file(ms, charges, config::input_file);
+    } else if (ext == ".mol2" or ext == ".sdf") {
+        generate_from_atom_and_bond_data(ms, charges, config::input_file);
     }
 }

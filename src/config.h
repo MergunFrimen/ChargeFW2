@@ -21,6 +21,7 @@ namespace config {
     extern bool read_hetatm;
     extern bool ignore_water;
     extern bool permissive_types;
+    extern bool mmcif_charges;
 }
 
 

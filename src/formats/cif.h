@@ -16,6 +16,7 @@
 class CIF : public Writer {
 public:
     void save_charges(const MoleculeSet &ms, const Charges &charges, const std::string &filename) override;
+    void generate_mmcif_file_with_charges(const MoleculeSet &ms, const Charges &charges, const std::string &filename);
 private:
     static void append_fw2_config(gemmi::cif::Block &block, const std::string &method, const std::string &parameters);
     static void replace_fw2_columns(gemmi::cif::Table &table, const std::vector<std::string> &p_charge,

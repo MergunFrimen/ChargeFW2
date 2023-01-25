@@ -27,8 +27,14 @@ RUN apt-get update && \
         rm -rf /var/lib/apt/lists/* && \
         apt-get clean && \
         apt-get autoremove
+RUN apt-get update && \
+        apt-get install -y ${DEPS} && \
+        rm -rf /var/lib/apt/lists/* && \
+        apt-get clean && \
+        apt-get autoremove
 
 # non-root user
+ARG UNAME=nonroot
 ARG UNAME=nonroot
 ARG UID=1000
 ARG GID=1000
