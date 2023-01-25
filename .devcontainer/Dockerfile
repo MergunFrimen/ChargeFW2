@@ -3,6 +3,7 @@ FROM ubuntu:22.04
 ENV PYTHONPATH=/usr/local/lib
 
 ARG DEPS="\
+        clang \
         cmake \
         g++ \
         gemmi-dev \
@@ -18,6 +19,7 @@ ARG DEPS="\
         nlohmann-json3-dev \
         python3-dev \
         python3-pybind11 \
+        sudo \
         tao-pegtl-dev"
 
 RUN apt-get update && \
@@ -31,5 +33,7 @@ ARG UNAME=nonroot
 ARG UID=1000
 ARG GID=1000
 RUN groupadd -g ${GID} -o ${UNAME} && \
-        useradd -m -u ${UID} -g ${GID} -o -s /bin/bash ${UNAME}
+        useradd -m -u ${UID} -g ${GID} -o -s /bin/bash ${UNAME} && \
+        echo "${UNAME}:${UNAME}" | chpasswd && adduser nonroot sudo
+
 USER ${UNAME}
