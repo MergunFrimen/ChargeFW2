@@ -20,4 +20,4 @@ make
 make install
 ```
 
-> The default `CMAKE_INSTALL_PREFIX=/usr/lib` won't work because the devcontainer is running unprivileged and won't be able to install under that directory.
+> The default `CMAKE_INSTALL_PREFIX=/usr/lib` won't work because the devcontainer is running unprivileged and won't be able to install files into that directory.
