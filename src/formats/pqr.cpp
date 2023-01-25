@@ -2,15 +2,6 @@
 // Created by krab1k on 31.1.19.
 //
 
-#include <string>
-#include <fstream>
-#include <filesystem>
-#define GEMMI_WRITE_IMPLEMENTATION // TODO: add sprintf.h to usr/include/gemmi/third_party libs
-#include <gemmi/to_mmcif.hpp>  // make_mmcif_document
-#undef GEMMI_WRITE_IMPLEMENTATION
-#include <gemmi/to_cif.hpp>
-#include <gemmi/pdb.hpp>
-#include <gemmi/align.hpp>  // assign_label_seq_id
 #include <fmt/format.h>
 
 #include "chargefw2.h"
@@ -53,27 +44,4 @@ void PQR::save_charges(const MoleculeSet &ms, const Charges &charges, const std:
     }
 
     fclose(file);
-}
-
-void PQR::append_charges_to_file(const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
-    auto structure = gemmi::read_pdb_file(filename);
-
-    if (structure.models.empty() || structure.models[0].chains.empty()) {
-        fmt::print(stderr, "ERROR: No models or no chains in PDB file.\n");
-        exit(EXIT_FILE_ERROR);
-    }
-
-    gemmi::setup_entities(structure);
-    gemmi::assign_label_seq_id(structure, false);
-
-    auto block = gemmi::make_mmcif_block(structure);
-    
-    std::filesystem::path out_dir{config::chg_out_dir};
-    std::string out_filename = std::filesystem::path(filename).filename().string() + ".charges.cif";
-    std::string out_file{(out_dir / out_filename).string()};
-    std::ofstream out_stream{out_file};
-
-    CIF().append_charges_to_block(ms, charges, block);
-    
-    gemmi::cif::write_cif_block_to_stream(out_stream, block);
 }

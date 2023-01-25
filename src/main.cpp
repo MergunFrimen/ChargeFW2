@@ -143,21 +143,8 @@ int main(int argc, char **argv) {
             Mol2().save_charges(m, charges, dir / std::filesystem::path(mol2_str));
         }
 
-        // TODO: branch based on is_protein_structure?
-        // create a mmcif file with charges
-        if (config::mmcif_charges) {
-            if (ext == ".cif") {
-                CIF().append_charges_to_file(m, charges, config::input_file);
-            } else if (ext == ".mol2" or ext == ".sdf") {
-                Mol2().append_charges_to_file(m, charges, config::input_file);
-            } else if (ext == ".pdb" or ext == ".ent") {
-                PQR().append_charges_to_file(m, charges, config::input_file);
-            }
-            else {
-                fmt::print(stderr, "Cannot append charges to file with extension " + ext);
-                exit(EXIT_FILE_ERROR);
-            }
-        }
+        // create mmcif file with charges
+        CIF().generate_mmcif_file_with_charges(m, charges, config::input_file);
 
         if (not config::log_file.empty()) {
             struct rusage usage = {};
