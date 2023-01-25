@@ -15,12 +15,14 @@
 #include <gemmi/pdb.hpp>
 #include <gemmi/to_cif.hpp>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcpp"
+// suppresses warnings from gemmi/to_mmcif.hpp
+// unfortunately only works with clang
 #define GEMMI_WRITE_IMPLEMENTATION
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcpp"
 #include <gemmi/to_mmcif.hpp>  // make_mmcif_block
+#pragma clang diagnostic pop
 #undef GEMMI_WRITE_IMPLEMENTATION
-#pragma GCC diagnostic pop
 
 #include "chargefw2.h"
 #include "cif.h"
