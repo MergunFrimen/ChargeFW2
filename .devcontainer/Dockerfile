@@ -25,8 +25,8 @@ ARG DEPS="\
 RUN apt-get update && \
         apt-get install -y ${DEPS}
 
-RUN git clone https://github.com/project-gemmi/gemmi.git && \
-    cp -r gemmi/include/gemmi /usr/include
+# RUN git clone https://github.com/project-gemmi/gemmi.git && \
+#     cp -r gemmi/include/gemmi /usr/include
 
 # non-root user
 ARG UNAME=nonroot
