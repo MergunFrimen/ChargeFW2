@@ -13,7 +13,7 @@
   <a href="#how-to-cite">How To Cite</a> 
 </p>
 
-<h4 align="center">Application for computing partial atomic charges using selected empirical methods. ChargeFW2 is the computational core of <a href="https://acc2.ncbr.muni.cz" target="_blank">ACC2</a>.</h4>
+<p align="center">Application for computing partial atomic charges using selected empirical methods. ChargeFW2 is the computational core of <a href="https://acc2.ncbr.muni.cz" target="_blank">ACC2</a>.</p>
 
 See the [short description](https://acc2.ncbr.muni.cz/static/methods.pdf) of implemented methods. 
 
