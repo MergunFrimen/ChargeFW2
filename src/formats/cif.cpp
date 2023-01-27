@@ -374,13 +374,13 @@ static void generate_from_atom_and_bond_data(const MoleculeSet &ms, const Charge
         ".label_atom_id",
         ".label_comp_id",
         ".label_seq_id",
-        ".label_alt_id",
+        // ".label_alt_id",
         ".label_asym_id",
         ".label_entity_id",
         ".Cartn_x",
         ".Cartn_y",
         ".Cartn_z",
-        ".auth_asym_id",
+        // ".auth_asym_id",
     };
 
     const std::vector<std::string> chem_comp_attributes = {
@@ -414,13 +414,13 @@ static void generate_from_atom_and_bond_data(const MoleculeSet &ms, const Charge
         const std::string label_atom_id = id;
         const std::string label_comp_id = atom.residue();
         const std::string label_seq_id = fmt::format("{}", atom.residue_id());
-        const std::string label_alt_id = ".";
+        // const std::string label_alt_id = ".";
         const std::string label_asym_id = atom.chain_id() == "" ? "." : atom.chain_id();
         const std::string label_entity_id = "1";
         const std::string cartn_x = fmt::format("{:.3f}", atom.pos()[0]);
         const std::string cartn_y = fmt::format("{:.3f}", atom.pos()[1]);
         const std::string cartn_z = fmt::format("{:.3f}", atom.pos()[2]);
-        const std::string auth_asym_id = ".";
+        // const std::string auth_asym_id = ".";
         atom_site_loop.add_row({
             group_PDB,
             id,
@@ -428,13 +428,13 @@ static void generate_from_atom_and_bond_data(const MoleculeSet &ms, const Charge
             label_atom_id,
             label_comp_id,
             label_seq_id,
-            label_alt_id,
+            // label_alt_id,
             label_asym_id,
             label_entity_id,
             cartn_x,
             cartn_y,
             cartn_z,
-            auth_asym_id,
+            // auth_asym_id,
         });
     }
 
