@@ -316,7 +316,7 @@ static void append_charges_to_block(const MoleculeSet &ms, const Charges &charge
         const auto &atom = molecule.atoms()[i];
         const auto id = "1";
         const auto atomId = fmt::format("{}", atom.index() + 1);
-        const auto charge = fmt::format("{}", atom_charges[i]);
+        const auto charge = fmt::format("{:.4f}", atom_charges[i]);
         charges_loop.add_row({
             id,
             atomId,
