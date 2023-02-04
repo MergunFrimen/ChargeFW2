@@ -281,19 +281,19 @@ static std::string convert_bond_order_to_mmcif_value_order_string(int order) {
 }
 
 static void append_charges_to_block(const MoleculeSet &ms, const Charges &charges, gemmi::cif::Block &block) {
-    const std::string partial_atomic_charges_meta_prefix = "_partial_atomic_charges_meta";
-    const std::string partial_atomic_charges_prefix = "_partial_atomic_charges";
+    const std::string partial_atomic_charges_meta_prefix = "_partial_atomic_charges_meta.";
+    const std::string partial_atomic_charges_prefix = "_partial_atomic_charges.";
     
     const std::vector<std::string> partial_atomic_charges_meta_attributes = {
-        ".id",
-        ".type",
-        ".method",
+        "id",
+        "type",
+        "method",
     };
 
     const std::vector<std::string> partial_atomic_charges_attributes = {
-        ".type_id",
-        ".atom_id",
-        ".charge",
+        "type_id",
+        "atom_id",
+        "charge",
     };
 
     const auto& molecule = ms.molecules()[0];
@@ -363,35 +363,35 @@ static void generate_from_pdb_file(const MoleculeSet &ms, const Charges &charges
 }
 
 static void generate_from_atom_and_bond_data(const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
-    const std::string atom_site_prefix = "_atom_site";
-    const std::string chem_comp_prefix = "_chem_comp";    
-    const std::string chem_comp_bond_prefix = "_chem_comp_bond";
+    const std::string atom_site_prefix = "_atom_site.";
+    const std::string chem_comp_prefix = "_chem_comp.";    
+    const std::string chem_comp_bond_prefix = "_chem_comp_bond.";
 
     const std::vector<std::string> atom_site_attributes = {
-        ".group_PDB",
-        ".id",
-        ".type_symbol",
-        ".label_atom_id",
-        ".label_comp_id",
-        ".label_seq_id",
-        // ".label_alt_id",
-        ".label_asym_id",
-        ".label_entity_id",
-        ".Cartn_x",
-        ".Cartn_y",
-        ".Cartn_z",
-        // ".auth_asym_id",
+        "group_PDB",
+        "id",
+        "type_symbol",
+        "label_atom_id",
+        "label_comp_id",
+        "label_seq_id",
+        // "label_alt_id",
+        "label_asym_id",
+        "label_entity_id",
+        "Cartn_x",
+        "Cartn_y",
+        "Cartn_z",
+        // "auth_asym_id",
     };
 
     const std::vector<std::string> chem_comp_attributes = {
-        ".id",
+        "id",
     };
 
     const std::vector<std::string> chem_comp_bond_attributes = {
-        ".comp_id",
-        ".atom_id_1",
-        ".atom_id_2",
-        ".value_order",
+        "comp_id",
+        "atom_id_1",
+        "atom_id_2",
+        "value_order",
     };
 
     const auto& molecule = ms.molecules()[0];
