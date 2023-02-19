@@ -394,75 +394,76 @@ static void generate_from_atom_and_bond_data(const MoleculeSet &ms, const Charge
         "value_order",
     };
 
-    const auto& molecule = ms.molecules()[0];
 
-    std::filesystem::path out_dir{config::chg_out_dir};
-    std::string out_filename = std::filesystem::path(filename).filename().string() + ".charges.cif";
-    std::string out_file{(out_dir / out_filename).string()};
-    std::ofstream out_stream{out_file};
+    for (const auto& molecule : ms.molecules()) {    
+        std::filesystem::path out_dir{config::chg_out_dir};
+        std::string out_filename = molecule.name() + ".charges.cif";
+        std::string out_file{(out_dir / out_filename).string()};
+        std::ofstream out_stream{out_file};
 
-    auto document = gemmi::cif::Document{};
-    auto& block = document.add_new_block(to_lowercase(molecule.name()));
+        auto document = gemmi::cif::Document{};
+        auto& block = document.add_new_block(to_lowercase(molecule.name()));
 
-    // _atom_site
-    auto& atom_site_loop = block.init_loop(atom_site_prefix, atom_site_attributes);
-    for (size_t i = 0; i < molecule.atoms().size(); i++) {
-        const auto &atom = molecule.atoms()[i];
-        const std::string group_PDB = atom.hetatm() ? "HETATM" : "ATOM";
-        const std::string id = fmt::format("{}", atom.index() + 1);
-        const std::string type_symbol = atom.element().symbol();
-        const std::string label_atom_id = id;
-        const std::string label_comp_id = atom.residue();
-        const std::string label_seq_id = fmt::format("{}", atom.residue_id());
-        // const std::string label_alt_id = ".";
-        const std::string label_asym_id = atom.chain_id() == "" ? "." : atom.chain_id();
-        const std::string label_entity_id = "1";
-        const std::string cartn_x = fmt::format("{:.3f}", atom.pos()[0]);
-        const std::string cartn_y = fmt::format("{:.3f}", atom.pos()[1]);
-        const std::string cartn_z = fmt::format("{:.3f}", atom.pos()[2]);
-        // const std::string auth_asym_id = ".";
-        atom_site_loop.add_row({
-            group_PDB,
-            id,
-            type_symbol,
-            label_atom_id,
-            label_comp_id,
-            label_seq_id,
-            // label_alt_id,
-            label_asym_id,
-            label_entity_id,
-            cartn_x,
-            cartn_y,
-            cartn_z,
-            // auth_asym_id,
-        });
-    }
+        // _atom_site
+        auto& atom_site_loop = block.init_loop(atom_site_prefix, atom_site_attributes);
+        for (size_t i = 0; i < molecule.atoms().size(); i++) {
+            const auto &atom = molecule.atoms()[i];
+            const std::string group_PDB = atom.hetatm() ? "HETATM" : "ATOM";
+            const std::string id = fmt::format("{}", atom.index() + 1);
+            const std::string type_symbol = atom.element().symbol();
+            const std::string label_atom_id = id;
+            const std::string label_comp_id = atom.residue();
+            const std::string label_seq_id = fmt::format("{}", atom.residue_id());
+            // const std::string label_alt_id = ".";
+            const std::string label_asym_id = atom.chain_id() == "" ? "." : atom.chain_id();
+            const std::string label_entity_id = "1";
+            const std::string cartn_x = fmt::format("{:.3f}", atom.pos()[0]);
+            const std::string cartn_y = fmt::format("{:.3f}", atom.pos()[1]);
+            const std::string cartn_z = fmt::format("{:.3f}", atom.pos()[2]);
+            // const std::string auth_asym_id = ".";
+            atom_site_loop.add_row({
+                group_PDB,
+                id,
+                type_symbol,
+                label_atom_id,
+                label_comp_id,
+                label_seq_id,
+                // label_alt_id,
+                label_asym_id,
+                label_entity_id,
+                cartn_x,
+                cartn_y,
+                cartn_z,
+                // auth_asym_id,
+            });
+        }
 
-    // _chem_comp
-    auto& chem_comp_loop = block.init_loop(chem_comp_prefix, chem_comp_attributes);
-    const std::string comp_id = "UNL";
-    chem_comp_loop.add_row({
-        comp_id,
-    });
-
-    // _chem_comp_bond
-    auto& chem_comp_bond_loop = block.init_loop(chem_comp_bond_prefix, chem_comp_bond_attributes);
-    for (const auto& bond: molecule.bonds()) {
+        // _chem_comp
+        auto& chem_comp_loop = block.init_loop(chem_comp_prefix, chem_comp_attributes);
         const std::string comp_id = "UNL";
-        const std::string atom_id_1 = fmt::format("{}", bond.first().index() + 1);
-        const std::string atom_id_2 = fmt::format("{}", bond.second().index() + 1);
-        const std::string value_order = convert_bond_order_to_mmcif_value_order_string(bond.order());
-        chem_comp_bond_loop.add_row({
+        chem_comp_loop.add_row({
             comp_id,
-            atom_id_1,
-            atom_id_2,
-            value_order,
         });
+
+        // _chem_comp_bond
+        auto& chem_comp_bond_loop = block.init_loop(chem_comp_bond_prefix, chem_comp_bond_attributes);
+        for (const auto& bond: molecule.bonds()) {
+            const std::string comp_id = "UNL";
+            const std::string atom_id_1 = fmt::format("{}", bond.first().index() + 1);
+            const std::string atom_id_2 = fmt::format("{}", bond.second().index() + 1);
+            const std::string value_order = convert_bond_order_to_mmcif_value_order_string(bond.order());
+            chem_comp_bond_loop.add_row({
+                comp_id,
+                atom_id_1,
+                atom_id_2,
+                value_order,
+            });
+        }
+
+        append_charges_to_block(ms, charges, block);
+
+        gemmi::cif::write_cif_block_to_stream(out_stream, block);
     }
-
-    append_charges_to_block(ms, charges, block);
-
-    gemmi::cif::write_cif_block_to_stream(out_stream, block);
 }
 
 void CIF::generate_mmcif_file_with_charges(const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
