@@ -352,6 +352,9 @@ static void generate_from_pdb_file(const MoleculeSet &ms, const Charges &charges
 
     auto block = gemmi::make_mmcif_block(structure);
     
+    // remove pesky _chem_comp category >:(
+    block.find_mmcif_category("_chem_comp.").erase();
+
     std::filesystem::path out_dir{config::chg_out_dir};
     std::string out_filename = std::filesystem::path(filename).filename().string() + ".charges.cif";
     std::string out_file{(out_dir / out_filename).string()};
