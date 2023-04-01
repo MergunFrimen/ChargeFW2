@@ -95,14 +95,38 @@ static void append_charges_to_block(const MoleculeSet &ms, const Charges &charge
 }
 
 static void filter_out_altloc_atoms(gemmi::cif::Block &block) {
-    auto structure = gemmi::make_structure_from_block(block);
+    auto table = block.find_mmcif_category("_atom_site.");
+    auto &loop = *table.get_loop();
+
+    const int label_alt_id_index_col = table.find_column_position("_atom_site.label_alt_id");
+    const int id_col = table.find_column_position("_atom_site.id");
     
-    if (structure.models.empty()) {
-        throw std::runtime_error("Not enough information to create a structure");
+    std::set<int> rows_to_remove;
+    const auto& label_alt_id = table.bloc.find_loop(loop.tags[label_alt_id_index_col]);
+    for (unsigned i = 0; i < loop.length(); ++i) {
+        if (label_alt_id.at(i) != "." and label_alt_id.at(i) != "A") {
+            rows_to_remove.insert(i);
+        }
     }
 
-    gemmi::remove_alternative_conformations(structure);
-    gemmi::update_mmcif_block(structure, block);
+    const size_t new_length = loop.length() - rows_to_remove.size();
+    std::vector<std::vector<std::string>> new_columns(loop.tags.size());
+
+    for (unsigned j = 0; j != loop.tags.size(); ++j) {
+        auto column = table.bloc.find_loop(loop.tags[j]);
+        for (unsigned i = 0; i != loop.length(); ++i) {
+            if (rows_to_remove.find(i) == rows_to_remove.end()) {
+                new_columns[j].push_back(column[i]);
+            }
+        }
+    }
+
+    // reset ids
+    for (unsigned i = 0; i < new_length; ++i) {
+        new_columns[id_col][i] = fmt::format("{}", i + 1);
+    }
+
+    loop.set_all_values(new_columns);
 }
 
 static void generate_mmcif_from_block(gemmi::cif::Block &block, const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
@@ -113,9 +137,6 @@ static void generate_mmcif_from_block(gemmi::cif::Block &block, const MoleculeSe
 
     filter_out_altloc_atoms(block);
     append_charges_to_block(ms, charges, block);
-
-    // remove pesky _chem_comp category >:(
-    block.find_mmcif_category("_chem_comp.").erase();
 
     gemmi::cif::write_cif_block_to_stream(out_stream, block);
 }
@@ -139,6 +160,9 @@ static void generate_mmcif_from_pdb_file(const MoleculeSet &ms, const Charges &c
     gemmi::assign_label_seq_id(structure, false);
 
     auto block = gemmi::make_mmcif_block(structure);
+
+    // remove pesky _chem_comp category >:(
+    block.find_mmcif_category("_chem_comp.").erase();
 
     generate_mmcif_from_block(block, ms, charges, filename);
 }
