@@ -49,7 +49,7 @@ static std::string convert_bond_order_to_mmcif_value_order_string(int order) {
     }
 }
 
-static void append_charges_to_block(const MoleculeSet &ms, const Charges &charges, gemmi::cif::Block &block) {
+static void append_charges_to_block(const Molecule &molecule, const Charges &charges, gemmi::cif::Block &block) {
     const std::string partial_atomic_charges_meta_prefix = "_partial_atomic_charges_meta.";
     const std::string partial_atomic_charges_prefix = "_partial_atomic_charges.";
     
@@ -65,7 +65,6 @@ static void append_charges_to_block(const MoleculeSet &ms, const Charges &charge
         "charge",
     };
 
-    const auto& molecule = ms.molecules()[0];
     const auto& atom_charges = charges[molecule.name()];
 
     // _partial_atomic_charges_meta
@@ -136,7 +135,7 @@ static void generate_mmcif_from_block(gemmi::cif::Block &block, const MoleculeSe
     std::ofstream out_stream{out_file};
 
     filter_out_altloc_atoms(block);
-    append_charges_to_block(ms, charges, block);
+    append_charges_to_block(ms.molecules()[0], charges, block);
 
     gemmi::cif::write_cif_block_to_stream(out_stream, block);
 }
@@ -266,7 +265,7 @@ static void generate_mmcif_from_atom_and_bond_data(const MoleculeSet &ms, const 
             });
         }
 
-        append_charges_to_block(ms, charges, block);
+        append_charges_to_block(molecule, charges, block);
 
         gemmi::cif::write_cif_block_to_stream(out_stream, block);
     }
