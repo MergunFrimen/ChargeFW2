@@ -134,17 +134,13 @@ int main(int argc, char **argv) {
         if (is_protein_structure) {
             auto pqr_str = file.filename().string() + ".pqr";
             PQR().save_charges(m, charges, dir / std::filesystem::path(pqr_str));
-
-            if (ext == ".cif"){
-                CIF().save_charges(m, charges, config::input_file);
-            }
         } else {
             auto mol2_str = file.filename().string() + ".mol2";
             Mol2().save_charges(m, charges, dir / std::filesystem::path(mol2_str));
         }
 
         // create mmcif file with charges
-        CIF().generate_mmcif_file_with_charges(m, charges, config::input_file);
+        CIF().save_charges(m, charges, config::input_file);
 
         if (not config::log_file.empty()) {
             struct rusage usage = {};
