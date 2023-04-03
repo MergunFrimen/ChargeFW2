@@ -14,12 +14,9 @@
 
 #include "common.h"
 #include "chargefw2.h"
-#include "cif.h"
-#include "../config.h"
 #include "../charges.h"
 #include "../periodic_table.h"
 #include "mol2.h"
-#include "../utility/strings.h"
 
 
 void Mol2::read_record(std::ifstream &file, std::string &line, std::unique_ptr<std::vector<Atom>> &atoms,
@@ -152,7 +149,6 @@ void Mol2::save_charges(const MoleculeSet &ms, const Charges &charges, const std
     }
 
     for (const auto &molecule: ms.molecules()) {
-
         try {
             auto chg = charges[molecule.name()];
             fmt::print(file, "@<TRIPOS>MOLECULE\n");

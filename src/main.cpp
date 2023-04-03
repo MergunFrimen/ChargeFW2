@@ -125,11 +125,11 @@ int main(int argc, char **argv) {
             charges.insert(mol.name(), results);
         }
 
-        // saves charges to plain text file
         std::filesystem::path dir(config::chg_out_dir);
         std::filesystem::path file(config::input_file);
         auto txt_str = file.filename().string() + ".txt";
         TXT().save_charges(m, charges, dir / std::filesystem::path(txt_str));
+        CIF().save_charges(m, charges, config::input_file);
 
         if (is_protein_structure) {
             auto pqr_str = file.filename().string() + ".pqr";
@@ -138,9 +138,6 @@ int main(int argc, char **argv) {
             auto mol2_str = file.filename().string() + ".mol2";
             Mol2().save_charges(m, charges, dir / std::filesystem::path(mol2_str));
         }
-
-        // create mmcif file with charges
-        CIF().save_charges(m, charges, config::input_file);
 
         if (not config::log_file.empty()) {
             struct rusage usage = {};

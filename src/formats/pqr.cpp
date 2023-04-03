@@ -2,12 +2,10 @@
 // Created by krab1k on 31.1.19.
 //
 
-#include <fmt/format.h>
+#include <string>
 
 #include "chargefw2.h"
 #include "pqr.h"
-#include "cif.h"
-#include "../config.h"
 #include "../structures/molecule_set.h"
 #include "../charges.h"
 
@@ -21,8 +19,7 @@ void PQR::save_charges(const MoleculeSet &ms, const Charges &charges, const std:
 
     const auto &molecule = ms.molecules()[0];
 
-    try
-    {
+    try {
         auto chg = charges[molecule.name()];
         for (size_t i = 0; i < molecule.atoms().size(); i++) {
             const auto &atom = molecule.atoms()[i];
