@@ -7,3 +7,4 @@ build
 test
 cmake-build-*
 .ipynb_checkpoints
+.devcontainer
