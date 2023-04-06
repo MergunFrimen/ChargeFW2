@@ -32,6 +32,119 @@
 #include "../config.h"
 #include "../utility/strings.h"
 
+// class MCRA {
+//     const int _model;
+//     const std::string _chain;
+//     const std::string _res_num;
+//     const std::string _residue;
+//     const std::string _atom;
+
+// public:
+//     MCRA(const int model,
+//          const std::string &chain,
+//          const std::string &res_num,
+//          const std::string &residue,
+//          const std::string &atom)
+//         : _model(model), _chain(chain), _res_num(res_num), _residue(residue), _atom(atom)
+//         {}
+
+//     // finds _atom_site.id value corresponding to this MCRA
+//     int find_atomsite_id(gemmi::cif::Table &table) const {
+//         const int id_idx = table.find_column_position("_atom_site.id");
+
+//         for (const auto row: table) {
+//             if (is_row(table, row)) {
+//                 return std::stoi(row[id_idx]);
+//             }
+//         }
+
+//         return -1;
+//     }
+
+//     friend bool operator==(const MCRA &lhs, const MCRA &rhs) {
+//         return lhs._model == rhs._model &&
+//                lhs._chain == rhs._chain &&
+//                lhs._res_num == rhs._res_num &&
+//                lhs._residue == rhs._residue &&
+//                lhs._atom == rhs._atom;
+//     }
+
+// private:
+
+//     std::string remove_surrounding_quotes(const std::string &string) const {
+//         if (string[0] != '"') {
+//             return string;
+//         }
+//         return string.substr(1, string.size() - 2);
+//     }
+
+//     // returns true if the row is the same as this MCRA
+//     bool is_row(const gemmi::cif::Table &table, const gemmi::cif::Table::Row &row) const {
+//         const int pdbx_PDB_model_num_idx = table.find_column_position("_atom_site.pdbx_PDB_model_num");
+//         const int auth_asym_id_idx = table.find_column_position("_atom_site.auth_asym_id");
+//         const int auth_seq_id_idx = table.find_column_position("_atom_site.auth_seq_id");
+//         const int label_comp_id_idx = table.find_column_position("_atom_site.label_comp_id");
+//         const int label_atom_id_idx = table.find_column_position("_atom_site.label_atom_id");
+
+//         const int model = static_cast<int>(std::stoul(row[pdbx_PDB_model_num_idx]));
+//         const std::string &chain = row[auth_asym_id_idx];
+//         const std::string &res_num = row[auth_seq_id_idx];
+//         const std::string &residue = row[label_comp_id_idx];
+//         const std::string &atom = remove_surrounding_quotes(row[label_atom_id_idx]);
+
+//         // fmt::print(stderr, "{} {} | {} {} | {} {} | {} {} | {} {}\n",
+//         //         model, _model,
+//         //         chain, _chain,
+//         //         res_num, _res_num,
+//         //         residue, _residue,
+//         //         atom, _atom);
+
+//         return *this == MCRA(model, chain, res_num, residue, atom);
+//     }
+// };
+
+
+// static std::map<int, double> get_id_to_charge_mapping(const Molecule &molecule, const Charges &charges, gemmi::cif::Block &block) {
+//     auto table = block.find_mmcif_category("_atom_site.");
+//     if (!table.ok()) {
+//         fmt::print(stderr, "_atom_site category is empty\n");
+//         exit(EXIT_FILE_ERROR);
+//     }
+//     const auto &atom_charges = charges[molecule.name()];
+//     const int model = 1;
+//     std::map<int, double> p_charge = {};
+//     // loop over atoms in molecule and find corresponding row in table
+//     // then update the partial charge and vdw radius
+//     for (size_t i = 0; i < molecule.atoms().size(); ++i) {
+//         const auto &atom = molecule.atoms()[i];
+
+//         // check that the atom index is correct
+//         if (atom.index() != i) {
+//             fmt::print(stderr, "Atom index mismatch: {} != {}\n", atom.index(), i);
+//             exit(EXIT_FILE_ERROR);
+//         }
+
+//         MCRA mcra{
+//             model, 
+//             atom.chain_id(), 
+//             std::to_string(atom.residue_id()), 
+//             atom.residue(), 
+//             atom.name()
+//         };
+
+//         const int id = mcra.find_atomsite_id(table);
+//         if (id == -1){
+//                 fmt::print(stderr, "Failed to find Atom(1, {}, {}, {}, {})\n", 
+//                 atom.chain_id(), atom.residue_id(), atom.residue(), atom.name());
+//             exit(EXIT_FILE_ERROR);
+//         }
+//         assert(id > 0);
+//         p_charge[id] = atom_charges[atom.index()];
+//     }
+
+//     return p_charge;
+// }
+
 static std::string convert_bond_order_to_mmcif_value_order_string(int order) {
     // See link for bond order values for PDBx/mmCIF category _chem_comp_bond.value_order
     // https://mmcif.wwpdb.org/dictionaries/mmcif_pdbx_v50.dic/Items/_chem_comp_bond.value_order.html#papwtenum
@@ -94,48 +207,46 @@ static void append_charges_to_block(const Molecule &molecule, const Charges &cha
 }
 
 static void filter_out_altloc_atoms(gemmi::cif::Block &block) {
-    auto table = block.find_mmcif_category("_atom_site.");
-    auto &loop = *table.get_loop();
-
-    const int label_alt_id_index_col = table.find_column_position("_atom_site.label_alt_id");
-    const int id_col = table.find_column_position("_atom_site.id");
-    
-    std::set<int> rows_to_remove;
-    const auto& label_alt_id = table.bloc.find_loop(loop.tags[label_alt_id_index_col]);
-    for (unsigned i = 0; i < loop.length(); ++i) {
-        if (label_alt_id.at(i) != "." and label_alt_id.at(i) != "A") {
-            rows_to_remove.insert(i);
-        }
+    auto structure = gemmi::make_structure_from_block(block);
+    if (structure.models.empty()) {
+        throw std::runtime_error("Not enough information to create a structure");
     }
 
-    const size_t new_length = loop.length() - rows_to_remove.size();
-    std::vector<std::vector<std::string>> new_columns(loop.tags.size());
-
-    for (unsigned j = 0; j != loop.tags.size(); ++j) {
-        auto column = table.bloc.find_loop(loop.tags[j]);
-        for (unsigned i = 0; i != loop.length(); ++i) {
-            if (rows_to_remove.find(i) == rows_to_remove.end()) {
-                new_columns[j].push_back(column[i]);
+    // filter out the altloc atoms
+    // retains the _atom_site.id order
+    auto &model = structure.models[0];
+    for (gemmi::Chain &chain: model.chains) {
+        for (gemmi::Residue &residue: chain.residues) {
+            bool hetatm = residue.het_flag == 'H';
+            for (auto it = residue.atoms.begin(); it != residue.atoms.end(); ) {
+                const auto& atom = *it;
+                if (not atom.has_altloc() or atom.altloc == 'A') {
+                    if ((not hetatm) or
+                        (config::read_hetatm and residue.name != "HOH") or
+                        (config::read_hetatm and not config::ignore_water)) {
+                        ++it;
+                    }
+                } else {
+                    residue.atoms.erase(it);
+                }
             }
         }
     }
 
-    // reset ids
-    for (unsigned i = 0; i < new_length; ++i) {
-        new_columns[id_col][i] = fmt::format("{}", i + 1);
-    }
-
-    loop.set_all_values(new_columns);
+    gemmi::update_mmcif_block(structure, block);
 }
 
 static void generate_mmcif_from_block(gemmi::cif::Block &block, const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
+    filter_out_altloc_atoms(block);
+    append_charges_to_block(ms.molecules()[0], charges, block);
+    
     std::filesystem::path out_dir{config::chg_out_dir};
     std::string out_filename = std::filesystem::path(filename).filename().string() + ".charges.cif";
     std::string out_file{(out_dir / out_filename).string()};
     std::ofstream out_stream{out_file};
 
-    filter_out_altloc_atoms(block);
-    append_charges_to_block(ms.molecules()[0], charges, block);
+    // remove pesky _chem_comp category >:(
+    block.find_mmcif_category("_chem_comp.").erase();
 
     gemmi::cif::write_cif_block_to_stream(out_stream, block);
 }
@@ -159,9 +270,6 @@ static void generate_mmcif_from_pdb_file(const MoleculeSet &ms, const Charges &c
     gemmi::assign_label_seq_id(structure, false);
 
     auto block = gemmi::make_mmcif_block(structure);
-
-    // remove pesky _chem_comp category >:(
-    block.find_mmcif_category("_chem_comp.").erase();
 
     generate_mmcif_from_block(block, ms, charges, filename);
 }
