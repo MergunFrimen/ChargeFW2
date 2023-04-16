@@ -237,11 +237,14 @@ static void filter_out_altloc_atoms(gemmi::cif::Block &block) {
 }
 
 static void generate_mmcif_from_block(gemmi::cif::Block &block, const MoleculeSet &ms, const Charges &charges, const std::string &filename) {
+    const Molecule &molecule = ms.molecules()[0];
+    
     filter_out_altloc_atoms(block);
-    append_charges_to_block(ms.molecules()[0], charges, block);
+    append_charges_to_block(molecule, charges, block);
     
     std::filesystem::path out_dir{config::chg_out_dir};
-    std::string out_filename = std::filesystem::path(filename).filename().string() + ".charges.cif";
+    std::string molecule_name = to_lowercase(molecule.name());    
+    std::string out_filename = molecule_name + ".fw2.cif";
     std::string out_file{(out_dir / out_filename).string()};
     std::ofstream out_stream{out_file};
 
@@ -308,9 +311,9 @@ static void generate_mmcif_from_atom_and_bond_data(const MoleculeSet &ms, const 
 
 
     for (const auto& molecule : ms.molecules()) {
-        std::string molecule_name = to_lowercase(molecule.name());    
         std::filesystem::path out_dir{config::chg_out_dir};
-        std::string out_filename = molecule_name + ".charges.cif";
+        std::string molecule_name = to_lowercase(molecule.name());    
+        std::string out_filename = molecule_name + ".fw2.cif";
         std::string out_file{(out_dir / out_filename).string()};
         std::ofstream out_stream{out_file};
 
