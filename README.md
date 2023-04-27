@@ -1,19 +1,7 @@
-<h1 align="center">
-  <a href="https://github.com/MergunFrimen/chargefw2">
-  <img src="https://raw.githubusercontent.com/MergunFrimen/chargefw2/master/doc/logo.png" alt="ChargeFW2" width="500">
-  </a>
-</h1>
+# ChargeFW2
 
-
-<p align="center">
-  <a href="#compilation-requirements">Compilation requirements</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#docker">Docker</a> •
-  <a href="#usage">Usage</a> •
-  <a href="#how-to-cite">How To Cite</a> 
-</p>
-
-<p align="center">Application for computing partial atomic charges using selected empirical methods. ChargeFW2 is the computational core of <a href="https://acc2.ncbr.muni.cz" target="_blank">ACC2</a>.</p>
+Application for computing partial atomic charges using selected empirical methods.
+ChargeFW2 is the computational core of [Atomic Charge Calculator II](https://acc2.ncbr.muni.cz).
 
 See the [short description](https://acc2.ncbr.muni.cz/static/methods.pdf) of implemented methods. 
 
@@ -28,8 +16,7 @@ See the [short description](https://acc2.ncbr.muni.cz/static/methods.pdf) of imp
 - [GEMMI](https://github.com/project-gemmi/gemmi) 0.4.7
 - [pybind11](https://github.com/pybind/pybind11) 2.5.0
 
-> **Note:**
-> Tested on Fedora 32-36 and Ubuntu 20.04-22.04. Other version of the libraries might work too however this was not tested.
+Tested on Fedora 32-36 and Ubuntu 20.04-22.04. Other version of the libraries might work too however this was not tested.
 
 ## Installation
 After downloading and unpacking the sources, run the following in the ChargeFW2 directory:
@@ -97,22 +84,6 @@ $ docker exec -it $CONTAINER_ID chargefw2 --mode charges \
 # Remove container
 $ docker rm -f $CONTAINER_ID
 ```
-
-A prebuild image is available on [Docker Hub](https://hub.docker.com/r/frimen/chargefw2) which can be used directly:
-
-```shell script
-$ docker run -it --rm --entrypoint bash docker.io/frimen/chargefw2
-```
-
-The Docker container is setup for use in CLI workflows. Example using relative paths to files:
-
-```shell script
-$ docker build -t chargefw2 .
-$ docker run -it --rm -v $PWD:$PWD chargefw2 --mode charges \
-    --input-file $PWD/doc/molecules.sdf --chg-out-dir $PWD/
-```
-
-There is also a devcontainer available for this project. You can read more about it [here](.devcontainer/README.md).
 
 ## Usage
 
